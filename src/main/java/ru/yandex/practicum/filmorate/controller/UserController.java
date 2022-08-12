@@ -1,12 +1,10 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import ru.yandex.practicum.filmorate.ValidationException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import javax.validation.Valid;
@@ -14,20 +12,15 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/users")
+@Slf4j
 public class UserController {
     private final Map<Integer, User> users = new HashMap<>();
     private int id = 0;
-    private final static Logger log = LoggerFactory.getLogger(UserController.class);
 
     @PostMapping
-    public User createUser(@Valid @RequestBody User user, BindingResult errors) throws ValidationException {
+    public User createUser(@Valid @RequestBody User user) throws ValidationException {
         if (user.getName() == null || user.getName().equals("")) {
             user.setName(user.getLogin());
-        }
-
-        if (errors.hasFieldErrors()) {
-            log.warn("Произошла ошибка валидации: {}", errors.getAllErrors());
-            throw new ValidationException();
         }
 
         id = id + 1;
@@ -38,7 +31,7 @@ public class UserController {
     }
 
     @PutMapping
-    public User update(@Valid @RequestBody User user, BindingResult errors) throws Exception {
+    public User update(@Valid @RequestBody User user) throws ValidationException {
         User storedUser = users.get(user.getId());
 
         if (storedUser == null) {
@@ -49,16 +42,10 @@ public class UserController {
             user.setName(user.getLogin());
         }
 
-        if (errors.hasFieldErrors()) {
-            log.warn("Произошла ошибка валидации: {}", errors.getAllErrors());
-            throw new ValidationException();
-        }
-
         users.put(user.getId(), user);
         log.info("Обновились данные пользователя {}", user.getName());
         return user;
     }
-
 
     @GetMapping
     public Collection<User> getUsers() {

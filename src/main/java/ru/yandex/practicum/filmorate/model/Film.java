@@ -13,8 +13,7 @@ public class Film {
     @NotBlank
     private String name;
 
-    @Size(min = 1)
-    @Size(max = 200)
+    @Size(min = 1, max = 200)
     private String description;
 
     @NotNull

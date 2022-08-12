@@ -3,11 +3,9 @@ package ru.yandex.practicum.filmorate.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.validation.BindingResult;
-import ru.yandex.practicum.filmorate.ValidationException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.io.IOException;
@@ -23,25 +21,12 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class UserControllerTest {
 
-    UserController userController = new UserController();
     HttpClient client = HttpClient.newHttpClient();
     ObjectMapper mapper = new ObjectMapper();
     User user = new User();
     URI url;
     @LocalServerPort
     private int port;
-
-    @Test
-    void checkingWorkValidationExceptionUserController() {
-        defaultValues();
-        BindingResult bindingResult = Mockito.mock(BindingResult.class);
-        Mockito.when(bindingResult.hasFieldErrors()).thenReturn(true);
-        assertThrows(ValidationException.class, () -> userController.createUser(user, bindingResult));
-
-        Mockito.when(bindingResult.hasFieldErrors()).thenReturn(false);
-        User factUser = userController.createUser(user, bindingResult);
-        assertEquals(user, factUser);
-    }
 
     @Test
     void userValidationPositive() throws ValidationException, IOException, InterruptedException {

@@ -1,12 +1,10 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import ru.yandex.practicum.filmorate.ValidationException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import javax.validation.Valid;
@@ -17,17 +15,14 @@ import static java.time.Month.DECEMBER;
 
 @RestController
 @RequestMapping("/films")
+@Slf4j
 public class FilmController {
     private final Map<Integer, Film> films = new HashMap<>();
     private int id = 0;
-    private final static Logger log = LoggerFactory.getLogger(UserController.class);
     private final LocalDate release = LocalDate.of(1895, DECEMBER, 28);
+
     @PostMapping
-    public Film addFilm(@Valid @RequestBody Film film, BindingResult errors) throws ValidationException {
-        if (errors.hasFieldErrors()) {
-            log.warn("Произошла ошибка валидации: {}", errors.getAllErrors());
-            throw new ValidationException();
-        }
+    public Film addFilm(@Valid @RequestBody Film film) throws ValidationException {
 
         if (film.getReleaseDate().isBefore(release)) {
             log.warn("Дата релиза — раньше 28 декабря 1895 года");
@@ -42,16 +37,11 @@ public class FilmController {
     }
 
     @PutMapping
-    public Film update(@Valid @RequestBody Film film, BindingResult errors) throws Exception {
+    public Film update(@Valid @RequestBody Film film) throws ValidationException {
         Film storedFilm = films.get(film.getId());
 
         if (storedFilm == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-        }
-
-        if (errors.hasFieldErrors()) {
-            log.warn("Произошла ошибка валидации в поле: {}", errors.getAllErrors());
-            throw new ValidationException();
         }
 
         if (film.getReleaseDate().isBefore(release)) {
