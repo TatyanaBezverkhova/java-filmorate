@@ -1,62 +1,64 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
-import java.util.*;
-
-import static java.time.Month.DECEMBER;
+import java.util.Collection;
+import java.util.List;
 
 @RestController
 @RequestMapping("/films")
 @Slf4j
 public class FilmController {
-    private final Map<Integer, Film> films = new HashMap<>();
-    private int id = 0;
-    private final LocalDate release = LocalDate.of(1895, DECEMBER, 28);
+    private final FilmStorage filmStorage;
+    private final FilmService filmService;
+
+    @Autowired
+    public FilmController(FilmStorage filmStorage, FilmService filmService) {
+
+        this.filmStorage = filmStorage;
+        this.filmService = filmService;
+    }
 
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film) throws ValidationException {
-
-        if (film.getReleaseDate().isBefore(release)) {
-            log.warn("Дата релиза — раньше 28 декабря 1895 года");
-            throw new ValidationException();
-        }
-
-        id = id + 1;
-        film.setId(id);
-        films.put(id, film);
-        log.info("Добавлен фильм: {}", film.getName());
-        return film;
+        return filmStorage.addFilm(film);
     }
 
     @PutMapping
     public Film update(@Valid @RequestBody Film film) throws ValidationException {
-        Film storedFilm = films.get(film.getId());
-
-        if (storedFilm == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-        }
-
-        if (film.getReleaseDate().isBefore(release)) {
-            log.warn("Дата релиза — раньше 28 декабря 1895 года");
-            throw new ValidationException();
-        }
-
-        films.put(film.getId(), film);
-        log.info("Обновились данные пользователя {}", film.getName());
-        return film;
+        return filmStorage.update(film);
     }
 
     @GetMapping
     public Collection<Film> getFilms() {
-        log.info("Количество фильмов в текущий момент: {}", films.size());
-        return films.values();
+        return filmStorage.getFilms();
+    }
+
+    @GetMapping("/{id}")
+    public Film getFilm(@PathVariable Long id) throws NotFoundException {
+        return filmStorage.getFilm(id);
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public void addLike(@PathVariable Long id, @PathVariable Long userId) {
+        filmService.addLike(id, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public void deleteLike(@PathVariable Long id, @PathVariable long userId) {
+        filmService.deleteLike(id, userId);
+    }
+
+    @GetMapping("/popular")
+    public List<Film> getPopularFilms(@RequestParam(required = false) Integer count) {
+        return filmService.getPopularFilms(count);
     }
 }
