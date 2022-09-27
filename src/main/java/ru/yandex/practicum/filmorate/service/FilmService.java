@@ -2,17 +2,17 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static java.time.Month.DECEMBER;
 
@@ -21,77 +21,114 @@ import static java.time.Month.DECEMBER;
 public class FilmService {
 
     private final FilmStorage filmStorage;
-    private final UserService userService;
-    ComparatorForFilms comparator = new ComparatorForFilms();
+    private final MpaService mpaService;
+
+    private final GenreService genreService;
+
     private final LocalDate release = LocalDate.of(1895, DECEMBER, 28);
 
     @Autowired
-    public FilmService(FilmStorage filmStorage, UserService userService) {
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
+                       MpaService mpaService, GenreService genreService) {
         this.filmStorage = filmStorage;
-        this.userService = userService;
+        this.mpaService = mpaService;
+        this.genreService = genreService;
     }
 
     public Film addFilm(Film film) throws ValidationException {
-        if (film.getReleaseDate().isBefore(release)) {
+        Film createFilm = filmStorage.addFilm(film);
+        if (createFilm.getReleaseDate().isBefore(release)) {
             log.warn("Дата релиза — раньше 28 декабря 1895 года");
             throw new ValidationException("Дата релиза — раньше 28 декабря 1895 года");
         }
-        return filmStorage.addFilm(film);
+
+        if (createFilm.getGenres() != null) {
+            genreService.addGenreInFilm(createFilm.getId(), film.getGenres());
+        }
+
+        if (createFilm.getMpa() != null) {
+            mpaService.addMpaInFilm(createFilm.getId(), film.getMpa().getId());
+        }
+        return createFilm;
     }
 
     public Film update(Film film) throws ValidationException {
-        Film storedFilm = getFilm(film.getId());
+        Film storedFilm = filmStorage.getFilm(film.getId());
         if (storedFilm == null) {
             throw new NotFoundException("Фильм не найден");
         }
-        if (film.getReleaseDate().isBefore(release)) {
+        if (storedFilm.getReleaseDate().isBefore(release)) {
             log.warn("Дата релиза — раньше 28 декабря 1895 года");
             throw new ValidationException("Дата релиза — раньше 28 декабря 1895 года");
         }
-        return filmStorage.update(film);
+        if (film.getGenres() != null) {
+            genreService.updateGenreInFilm(film.getId(), film.getGenres());
+        }
+        if (film.getMpa() != null) {
+            mpaService.updateMpaInFilm(film.getId(), film.getMpa().getId());
+        }
+        Film updatedFilm = filmStorage.update(film);
+        if (film.getGenres() != null) {
+            ArrayList<Genre> genres = new ArrayList<>(new HashSet<>(film.getGenres()));
+            genres.sort(Comparator.comparingInt(Genre::getId));
+            updatedFilm.setGenres(genres);
+        }
+        updatedFilm.setMpa(film.getMpa());
+        return updatedFilm;
     }
 
     public Collection<Film> getFilms() {
-        return filmStorage.getFilms();
+        Collection<Film> films = filmStorage.getFilms();
+        for (Film film : films) {
+            addAnMpaToMovie(film);
+        }
+        return films;
     }
 
     public Film getFilm(Long id) throws NotFoundException {
-        if (filmStorage.getFilm(id) != null) {
-            return filmStorage.getFilm(id);
+        Film film = filmStorage.getFilm(id);
+        if (film == null) {
+            throw new NotFoundException("Фильма с id " + id + " не существует");
         }
-        throw new NotFoundException("Фильма с id " + id + " не существует");
+        addAnMpaToMovie(film);
+
+        return film;
     }
 
     public void addLike(Long id, Long userId) {
-        if (id == null || id == 0 || userId == null || userId == 0) {
+        if (id == null || id <= 0 || userId == null || userId <= 0) {
             throw new NotFoundException("id не может быть равен 0");
         }
-        Film film = getFilm(id);
-        film.getLikes().add(userService.getUser(userId).getId());
-        film.setRate(film.getLikes().size());
-        update(film);
+        filmStorage.addLike(id, userId);
     }
 
     public void deleteLike(Long id, Long userId) {
-        if (id == null || id == 0 || userId == null || userId == 0) {
-            throw new NotFoundException("id не может быть равен 0");
+        if (id == null || id <= 0 || userId == null || userId <= 0) {
+            throw new NotFoundException("id не может быть меньше или равно 0");
         }
-        Film film = getFilm(id);
-        film.getLikes().remove(userService.getUser(userId).getId());
-        film.setRate(film.getLikes().size());
-        update(film);
+        filmStorage.deleteLike(id, userId);
     }
 
     public List<Film> getPopularFilms(Integer count) {
-        List<Film> films = new ArrayList<>(getFilms());
-        films.sort(comparator);
-        int lim;
-        if (count == null || count == 0) {
-            lim = 10;
-        } else {
-            lim = count;
-        }
-        return films.stream().limit(lim)
-                .collect(Collectors.toList());
+        return filmStorage.getPopularFilms(count);
     }
+
+    private void addAnMpaToMovie(Film film) {
+        Mpa mpa = film.getMpa();
+        if (mpa != null) {
+            mpa = mpaService.getMpaById(mpa.getId());
+            film.setMpa(mpa);
+        }
+
+        List<Genre> genreIdHolders = film.getGenres();
+        if (genreIdHolders != null) {
+            List<Genre> genres = new ArrayList<>();
+            for (Genre genreIdHolder : genreIdHolders) {
+                Genre genre = genreService.getGenreById(genreIdHolder.getId());
+                genres.add(genre);
+            }
+            film.setGenres(genres);
+        }
+    }
+
 }

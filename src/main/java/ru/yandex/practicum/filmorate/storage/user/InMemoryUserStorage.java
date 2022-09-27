@@ -4,9 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -39,5 +38,45 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User getUser(Long id) {
         return users.get(id);
+    }
+
+    @Override
+    public void addFriend(Long id, Long friendId) {
+        User user = getUser(id);
+        User userFriend = getUser(friendId);
+        user.getFriends().add(friendId);
+        userFriend.getFriends().add(id);
+        update(user);
+    }
+
+    @Override
+    public void deleteFriend(Long id, Long friendId) {
+        User user = getUser(id);
+        User userFriend = getUser(friendId);
+        user.getFriends().remove(friendId);
+        userFriend.getFriends().remove(id);
+        update(user);
+    }
+
+    @Override
+    public List<User> getFriends(Long id) {
+        User user = getUser(id);
+        return getUsers().stream()
+                .filter(userInStream -> user.getFriends().contains(userInStream.getId()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<User> getGeneralFriends(Long id, Long friendId) {
+        User user = getUser(id);
+        User userFriend = getUser(friendId);
+        Set<Long> friendsId = user.getFriends();
+        Set<Long> userFriendId = userFriend.getFriends();
+        List<Long> commonFriendsId = friendsId.stream()
+                .filter(userFriendId::contains)
+                .collect(Collectors.toList());
+        return getUsers().stream()
+                .filter(userInStream -> commonFriendsId.contains(userInStream.getId()))
+                .collect(Collectors.toList());
     }
 }

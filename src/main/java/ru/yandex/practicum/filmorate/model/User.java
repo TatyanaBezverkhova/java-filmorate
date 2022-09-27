@@ -13,7 +13,6 @@ import java.util.Set;
 @Data
 public class User {
     private long id;
-    private Set<Long> friends = new HashSet<>();
     private String name;
 
     @Email
@@ -27,6 +26,22 @@ public class User {
     @PastOrPresent
     private LocalDate birthday;
 
+    private Set<Long> friends = new HashSet<>();
 
+    public User() {}
 
+    public User(Long id, String name, String login, String email, LocalDate birthday) {
+        this.id = id;
+        this.name = name;
+        this.login = login;
+        this.email = email;
+        this.birthday = birthday;
+    }
+
+    public User(String name, String login, String email, LocalDate birthday) {
+        this.name = name;
+        this.login = login;
+        this.email = email;
+        this.birthday = birthday;
+    }
 }
