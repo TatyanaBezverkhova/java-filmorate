@@ -34,7 +34,6 @@ class FilmorateApplicationTests {
     private final FilmDbStorage filmStorage;
     private final MpaDbStorage mpaStorage;
 
-
     @Test
     public void testCreateFilm() {
         addFilm();
