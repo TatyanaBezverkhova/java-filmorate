@@ -16,11 +16,6 @@ public interface FilmStorage {
 
     Film getFilm(Long id);
 
-    void addLike(Long id, Long userId);
-
-    void deleteLike(Long id, Long userId);
-
     List<Film> getPopularFilms(Integer count);
-
 
 }

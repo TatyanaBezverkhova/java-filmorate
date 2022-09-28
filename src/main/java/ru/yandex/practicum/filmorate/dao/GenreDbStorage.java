@@ -3,18 +3,15 @@ package ru.yandex.practicum.filmorate.dao;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.film.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
-@Component
+@Repository
 @Slf4j
 public class GenreDbStorage implements GenreStorage {
     private final JdbcTemplate jdbcTemplate;
@@ -42,20 +39,6 @@ public class GenreDbStorage implements GenreStorage {
     public Collection<Genre> getAllGenre() {
         String sqlQuery = "SELECT * FROM genre";
         return jdbcTemplate.query(sqlQuery, this::mapRowToGenre);
-    }
-
-    @Override
-    public void addGenreInFilm(Long filmId, Set<Genre> genre) {
-        for (Genre i : genre) {
-            jdbcTemplate.update("INSERT INTO film_genre (film_id, genre_id) VALUES (?, ?)", filmId, i.getId());
-        }
-    }
-
-    @Override
-    public void updateGenreInFilm(Long filmId, List<Genre> genres) {
-        jdbcTemplate.update("DELETE FROM film_genre WHERE film_id = ?", filmId);
-        addGenreInFilm(filmId, new HashSet<>(genres));
-
     }
 
     private Genre mapRowToGenre(ResultSet resultSet, int rowNum) throws SQLException {

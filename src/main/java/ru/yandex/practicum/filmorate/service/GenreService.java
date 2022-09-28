@@ -4,11 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.film.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
 
 @Service
 public class GenreService {
@@ -16,6 +14,7 @@ public class GenreService {
 
     @Autowired
     public GenreService(GenreStorage genreStorage) {
+
         this.genreStorage = genreStorage;
     }
 
@@ -31,12 +30,4 @@ public class GenreService {
     }
 
 
-    public void addGenreInFilm(Long filmId, List<Genre> genre) {
-        genreStorage.addGenreInFilm(filmId, new HashSet<>(genre));
-    }
-
-
-    public void updateGenreInFilm(Long filmId, List<Genre> genres) {
-        genreStorage.updateGenreInFilm(filmId, genres);
-    }
 }

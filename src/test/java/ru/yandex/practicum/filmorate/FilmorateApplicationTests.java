@@ -8,10 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.support.DirtiesContextBeforeModesTestExecutionListener;
-import ru.yandex.practicum.filmorate.dao.FilmDbStorage;
-import ru.yandex.practicum.filmorate.dao.GenreDbStorage;
-import ru.yandex.practicum.filmorate.dao.MpaDbStorage;
-import ru.yandex.practicum.filmorate.dao.UserDbStorage;
+import ru.yandex.practicum.filmorate.dao.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -25,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@RequiredArgsConstructor(onConstructor_ = {@Autowired})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @TestExecutionListeners({DirtiesContextBeforeModesTestExecutionListener.class})
 class FilmorateApplicationTests {
@@ -33,6 +30,11 @@ class FilmorateApplicationTests {
     private final GenreDbStorage genreStorage;
     private final FilmDbStorage filmStorage;
     private final MpaDbStorage mpaStorage;
+    private final FriendDbStorage friendStorage;
+    private final LikeDbStorage likeStorage;
+    private final FilmGenreDbStorage filmGenreStorage;
+
+    private final FilmMpaDbStorage filmMpaStorage;
 
     @Test
     public void testCreateFilm() {
@@ -83,9 +85,9 @@ class FilmorateApplicationTests {
     @Test
     public void testAddLike() {
         addFilm();
-        filmStorage.addLike(4L, 2L);
-        filmStorage.addLike(4L, 1L);
-        filmStorage.addLike(4L, 3L);
+        likeStorage.addLike(4L, 2L);
+        likeStorage.addLike(4L, 1L);
+        likeStorage.addLike(4L, 3L);
         filmStorage.getFilm(4L);
         Set<Long> likes = filmStorage.getFilm(4L).getLikes();
         assertThat(likes.size()).isEqualTo(3);
@@ -95,7 +97,7 @@ class FilmorateApplicationTests {
     public void testDeleteLike() {
         Set<Long> likes = filmStorage.getFilm(2L).getLikes();
         assertThat(likes.size()).isEqualTo(3);
-        filmStorage.deleteLike(2L, 2L);
+        likeStorage.deleteLike(2L, 2L);
         likes = filmStorage.getFilm(2L).getLikes();
         assertThat(likes.size()).isEqualTo(2);
     }
@@ -136,7 +138,7 @@ class FilmorateApplicationTests {
         Set<Genre> genres = new HashSet<>();
         genres.add(genreStorage.getGenreById((3)));
         genres.add(genreStorage.getGenreById(5));
-        genreStorage.addGenreInFilm(4L, genres);
+        filmGenreStorage.addGenreInFilm(4L, genres);
         Film getFilm = filmStorage.getFilm(4L);
         List<Genre> genreList = getFilm.getGenres();
         assertThat(genreList).isNotEmpty();
@@ -149,10 +151,10 @@ class FilmorateApplicationTests {
         Set<Genre> genres = new HashSet<>();
         genres.add(genreStorage.getGenreById((3)));
         genres.add(genreStorage.getGenreById(5));
-        genreStorage.addGenreInFilm(4L, genres);
+        filmGenreStorage.addGenreInFilm(4L, genres);
         List<Genre> genresTest = new ArrayList<>();
         genresTest.add(genreStorage.getGenreById(1));
-        genreStorage.updateGenreInFilm(4L, genresTest);
+        filmGenreStorage.updateGenreInFilm(4L, genresTest);
         Film getFilm = filmStorage.getFilm(4L);
         List<Genre> genreList = getFilm.getGenres();
         assertThat(genreList).isNotEmpty();
@@ -201,7 +203,7 @@ class FilmorateApplicationTests {
     @Test
     public void testCreateMpaInFilm() {
         addFilm();
-        mpaStorage.addMpaInFilm(4L, 3);
+        filmMpaStorage.addMpaInFilm(4L, 3);
         Film getFilm = filmStorage.getFilm(4L);
         assertThat(getFilm.getMpa().getId()).isEqualTo(3);
     }
@@ -209,7 +211,7 @@ class FilmorateApplicationTests {
     @Test
     public void testUpdateMpaInFilm() {
         assertThat(filmStorage.getFilm(1L).getMpa().getId()).isEqualTo(2);
-        mpaStorage.updateMpaInFilm(1L, 4);
+        filmMpaStorage.updateMpaInFilm(1L, 4);
         Film getFilm = filmStorage.getFilm(1L);
         assertThat(getFilm.getMpa().getId()).isEqualTo(4);
 
@@ -293,15 +295,15 @@ class FilmorateApplicationTests {
     @Test
     public void testAddFriend() {
         createUser();
-        userStorage.addFriend(4L, 2L);
-        userStorage.addFriend(4L, 1L);
-        userStorage.addFriend(4L, 3L);
+        friendStorage.addFriend(4L, 2L);
+        friendStorage.addFriend(4L, 1L);
+        friendStorage.addFriend(4L, 3L);
         userStorage.getUser(4L);
         Set<Long> friends = userStorage.getUser(4L).getFriends();
         assertThat(friends.size()).isEqualTo(3);
         friends = userStorage.getUser(2L).getFriends();
         assertThat(friends.size()).isEqualTo(1);
-        userStorage.addFriend(2L, 4L);
+        friendStorage.addFriend(2L, 4L);
         friends = userStorage.getUser(2L).getFriends();
         assertThat(friends.size()).isEqualTo(2);
     }
@@ -311,14 +313,14 @@ class FilmorateApplicationTests {
     public void testDeleteFriend() {
         Set<Long> friends = userStorage.getUser(1L).getFriends();
         assertThat(friends.size()).isEqualTo(2);
-        userStorage.deleteFriend(1L, 3L);
+        friendStorage.deleteFriend(1L, 3L);
         friends = userStorage.getUser(1L).getFriends();
         assertThat(friends.size()).isEqualTo(1);
     }
 
     @Test
     public void testGetFriends() {
-        List<User> users = userStorage.getFriends(1L);
+        List<User> users = friendStorage.getFriends(1L);
         assertThat(users.size()).isEqualTo(2);
         User user = users.get(0);
         assertThat(user.getName()).isEqualTo("Mikel");
@@ -327,14 +329,14 @@ class FilmorateApplicationTests {
 
     @Test
     public void testGetGeneralFriends() {
-        List<User> generalFriends = userStorage.getGeneralFriends(1L, 3L);
+        List<User> generalFriends = friendStorage.getGeneralFriends(1L, 3L);
         assertThat(generalFriends.size()).isEqualTo(1);
         User user = generalFriends.get(0);
         assertThat(user.getId()).isEqualTo(2);
         createUser();
-        userStorage.addFriend(1L, 4L);
-        userStorage.addFriend(3L, 4L);
-        generalFriends = userStorage.getGeneralFriends(1L, 3L);
+        friendStorage.addFriend(1L, 4L);
+        friendStorage.addFriend(3L, 4L);
+        generalFriends = friendStorage.getGeneralFriends(1L, 3L);
         assertThat(generalFriends.size()).isEqualTo(2);
 
     }

@@ -1,8 +1,8 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -18,6 +18,7 @@ import static java.time.Month.DECEMBER;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FilmService {
 
     private final FilmStorage filmStorage;
@@ -25,15 +26,11 @@ public class FilmService {
 
     private final GenreService genreService;
 
-    private final LocalDate release = LocalDate.of(1895, DECEMBER, 28);
+    private final FilmGenreService filmGenreService;
 
-    @Autowired
-    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
-                       MpaService mpaService, GenreService genreService) {
-        this.filmStorage = filmStorage;
-        this.mpaService = mpaService;
-        this.genreService = genreService;
-    }
+    private final FilmMpaService filmMpaService;
+
+    private final LocalDate release = LocalDate.of(1895, DECEMBER, 28);
 
     public Film addFilm(Film film) throws ValidationException {
         Film createFilm = filmStorage.addFilm(film);
@@ -43,11 +40,11 @@ public class FilmService {
         }
 
         if (createFilm.getGenres() != null) {
-            genreService.addGenreInFilm(createFilm.getId(), film.getGenres());
+            filmGenreService.addGenreInFilm(createFilm.getId(), film.getGenres());
         }
 
         if (createFilm.getMpa() != null) {
-            mpaService.addMpaInFilm(createFilm.getId(), film.getMpa().getId());
+            filmMpaService.addMpaInFilm(createFilm.getId(), film.getMpa().getId());
         }
         return createFilm;
     }
@@ -62,10 +59,10 @@ public class FilmService {
             throw new ValidationException("Дата релиза — раньше 28 декабря 1895 года");
         }
         if (film.getGenres() != null) {
-            genreService.updateGenreInFilm(film.getId(), film.getGenres());
+            filmGenreService.updateGenreInFilm(film.getId(), film.getGenres());
         }
         if (film.getMpa() != null) {
-            mpaService.updateMpaInFilm(film.getId(), film.getMpa().getId());
+            filmMpaService.updateMpaInFilm(film.getId(), film.getMpa().getId());
         }
         Film updatedFilm = filmStorage.update(film);
         if (film.getGenres() != null) {
@@ -93,20 +90,6 @@ public class FilmService {
         addAnMpaToMovie(film);
 
         return film;
-    }
-
-    public void addLike(Long id, Long userId) {
-        if (id == null || id <= 0 || userId == null || userId <= 0) {
-            throw new NotFoundException("id не может быть равен 0");
-        }
-        filmStorage.addLike(id, userId);
-    }
-
-    public void deleteLike(Long id, Long userId) {
-        if (id == null || id <= 0 || userId == null || userId <= 0) {
-            throw new NotFoundException("id не может быть меньше или равно 0");
-        }
-        filmStorage.deleteLike(id, userId);
     }
 
     public List<Film> getPopularFilms(Integer count) {

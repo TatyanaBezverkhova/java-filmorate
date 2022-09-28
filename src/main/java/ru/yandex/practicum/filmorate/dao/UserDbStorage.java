@@ -1,11 +1,12 @@
 package ru.yandex.practicum.filmorate.dao;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -18,8 +19,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Component
+@Repository
 @Slf4j
+@Primary
 public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbcTemplate;
 
@@ -87,40 +89,6 @@ public class UserDbStorage implements UserStorage {
         }
     }
 
-    @Override
-    public void addFriend(Long id, Long friendId) {
-        jdbcTemplate.update("INSERT INTO friends (user_id, friend_id) VALUES (?, ?)", id, friendId);
-    }
-
-    @Override
-    public void deleteFriend(Long id, Long friendId) {
-        String sqlQuery = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?";
-        jdbcTemplate.update(sqlQuery, id, friendId);
-    }
-
-    @Override
-    public List<User> getFriends(Long id) {
-
-        String sqlQuery = "SELECT users.* FROM users INNER JOIN friends ON friends.friend_id = users.user_id " +
-                "WHERE friends.user_id = ?";
-
-        Object[] args = {id};
-        int[] argsTypes = {Types.INTEGER};
-        return jdbcTemplate.query(sqlQuery, args, argsTypes, this::mapRowToUser);
-    }
-
-    @Override
-    public List<User> getGeneralFriends(Long id, Long friendId) {
-        String sqlQuery = "SELECT users.* FROM users INNER JOIN friends ON friends.friend_id = users.user_id " +
-                "WHERE friends.user_id = ?";
-        Object[] args = {id};
-        int[] argsTypes = {Types.INTEGER};
-        List<User> friendUser = jdbcTemplate.query(sqlQuery, args, argsTypes, this::mapRowToUser);
-        Object[] argsFriend = {friendId};
-        List<User> friendUserTwo = jdbcTemplate.query(sqlQuery, argsFriend, argsTypes, this::mapRowToUser);
-        friendUser.retainAll(friendUserTwo);
-        return friendUser;
-    }
 
     private User mapRowToUser(ResultSet resultSet, int rowNum) throws SQLException {
         Long id = resultSet.getLong("user_id");

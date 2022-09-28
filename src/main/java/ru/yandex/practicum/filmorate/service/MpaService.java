@@ -28,11 +28,5 @@ public class MpaService {
         return mpaStorage.getAllMpa();
     }
 
-    public void addMpaInFilm(Long filmId, Integer idMpa) {
-        mpaStorage.addMpaInFilm(filmId, idMpa);
-    }
 
-    public void updateMpaInFilm(Long filmId, Integer idMpa) {
-        mpaStorage.updateMpaInFilm(filmId, idMpa);
-    }
 }

@@ -9,7 +9,4 @@ public interface MpaStorage {
 
     Collection<Mpa> getAllMpa();
 
-    void addMpaInFilm(Long filmId, Integer idMpa);
-
-    void updateMpaInFilm(Long filmId, Integer idMpa);
 }
