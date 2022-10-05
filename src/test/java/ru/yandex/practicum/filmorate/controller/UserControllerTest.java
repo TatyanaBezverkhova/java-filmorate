@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.controller;
+/*package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -383,4 +383,4 @@ public class UserControllerTest {
                 .build();
         client.send(request, HttpResponse.BodyHandlers.ofString());
     }
-}
+}*/
